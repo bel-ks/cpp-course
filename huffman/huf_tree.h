@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <queue>
-#include <cstdlib>
+#include <cstdint>
 #include <algorithm>
 
 struct huf_tree {

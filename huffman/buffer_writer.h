@@ -2,7 +2,7 @@
 #define BUFFER_WRITER_H
 
 #include <ostream>
-#include <cstdlib>
+#include <cstdint>
 #include <string.h>
 
 struct buffer_writer {
