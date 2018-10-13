@@ -15,8 +15,8 @@ struct buffer_writer {
 private:
     static const size_t buffSize = 65536;
     uint8_t buff[buffSize];
-    std::ostream &out;
     size_t pos;
+    std::ostream &out;
 
     void clear();
 };

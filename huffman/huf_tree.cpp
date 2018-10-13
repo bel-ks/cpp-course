@@ -53,14 +53,14 @@ huf_tree::huf_tree(std::vector<uint64_t> const &cntSym) {
     root = newNodes[indNew].second;
     size_t ind = 0;
     for (; ind < 256; ++ind) {
-        if (!leaves[ind].second) {
+        if (leaves[ind].second) {
             delete leaves[ind].second;
         }
-        if (!newNodes[ind].second) {
+        if (newNodes[ind].second) {
             delete newNodes[ind].second;
         }
     }
-    if (!leaves[ind].second) {
+    if (leaves[ind].second) {
         delete leaves[ind].second;
     }
 }
