@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include "huf_tree.h"
 
 bool cmp(std::pair<uint64_t, huf_tree::Node*> &firN, std::pair<uint64_t, huf_tree::Node*> &secN) {

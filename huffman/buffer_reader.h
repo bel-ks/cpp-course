@@ -2,6 +2,7 @@
 #define BUFFER_READER_H
 
 #include <istream>
+#include <cstdlib>
 #include <string.h>
 
 struct buffer_reader {
