@@ -18,6 +18,7 @@ struct huf_tree {
     };
 
     huf_tree(std::vector<uint64_t> const& cntSym);
+    ~huf_tree();
 
     uint8_t getSym() const;
     uint64_t getNum() const;

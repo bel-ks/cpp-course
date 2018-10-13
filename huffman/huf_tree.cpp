@@ -51,18 +51,20 @@ huf_tree::huf_tree(std::vector<uint64_t> const &cntSym) {
         newNodes[sizeNew] = { (uint64_t)-1, nullptr };
     }
     root = newNodes[indNew].second;
-    size_t ind = 0;
-    for (; ind < 256; ++ind) {
-        if (leaves[ind].second) {
-            delete leaves[ind].second;
-        }
-        if (newNodes[ind].second) {
-            delete newNodes[ind].second;
-        }
+}
+
+void dfs(huf_tree::Node *curNode) {
+    if (curNode->isTerm()) {
+        delete curNode;
+        return;
     }
-    if (leaves[ind].second) {
-        delete leaves[ind].second;
-    }
+    dfs(curNode->left);
+    dfs(curNode->right);
+    delete curNode;
+}
+
+huf_tree::~huf_tree() {
+    dfs(root);
 }
 
 bool huf_tree::Node::isTerm() const {
