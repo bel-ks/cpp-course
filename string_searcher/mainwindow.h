@@ -3,15 +3,14 @@
 
 #include <QtConcurrent/QtConcurrentRun>
 #include <QtConcurrent/QtConcurrentMap>
+#include <QFileSystemWatcher>
 #include <QProgressDialog>
 #include <QFutureWatcher>
-#include <QtAlgorithms>
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QStringList>
 #include <QMessageBox>
 #include <QTextStream>
-#include <QTextCodec>
 #include <QByteArray>
 #include <QString>
 #include <QMutex>
@@ -54,6 +53,7 @@ private:
     QString curPath;
     qint32 filesSize;
     QVector<QString> allFiles;
+    QFileSystemWatcher *watcher;
     QVector<QString> filesWith1;
     QVector<QString> filesWith2;
     QVector<QString> containsStr;
@@ -61,7 +61,7 @@ private:
     QFutureWatcher<void> triHandler;
     QFutureWatcher<void> fileHandler;
     const qint64 bufSize = (1 << 16);
-    QMap<QString, QVector<qint64> > trigrams;
+    QMap<QString, QSet<qint64> > trigrams;
     QVector<QVector<QPair<QString, qint64> > > blocks;
 
     void deleteAllItems();

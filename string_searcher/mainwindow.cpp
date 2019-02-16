@@ -10,6 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->search_button->setEnabled(false);
     connect(&fileHandler, SIGNAL(finished()), this, SLOT(files_were_found()));
     ui->files_with_str->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    connect(watcher, SIGNAL(fileChanged(QString)), this, SLOT(on_index_button_clicked()));
+    connect(watcher, SIGNAL(directoryChanged(QString)), this, SLOT(on_index_button_clicked()));
 }
 
 MainWindow::~MainWindow()
@@ -25,6 +27,7 @@ void MainWindow::on_choose_button_clicked()
 }
 
 void MainWindow::index_files(QString path) {
+    watcher->addPath(path);
     QDir dir(path);
     if (dir.exists()) {
         QStringList dirs = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
@@ -33,6 +36,7 @@ void MainWindow::index_files(QString path) {
         }
         QStringList files = dir.entryList(QDir::Files | QDir::NoSymLinks);
         for (auto f : files) {
+            watcher->addPath(path + "/" + f);
             qint64 size = QFile(path + "/" + f).size();
             if (size > 0) {
                 if (size == 1) {
@@ -87,7 +91,7 @@ void MainWindow::on_index_button_clicked()
 
 void MainWindow::get_trigrams(QVector<QPair<QString, qint64> > paths)
 {
-    QVector<QPair<QString, qint64> > tris;
+    QSet<QPair<QString, qint64> > tris;
     for (auto filePath : paths) {
         if (isCanceled) {
             return;
@@ -119,7 +123,7 @@ void MainWindow::get_trigrams(QVector<QPair<QString, qint64> > paths)
             tri.remove(0, 1);
             tri.push_back(cur);
             if(ind > 1) {
-                tris.push_back({ tri, filePath.second });
+                tris.insert({ tri, filePath.second });
             }
             ++ind;
         }
@@ -129,7 +133,7 @@ void MainWindow::get_trigrams(QVector<QPair<QString, qint64> > paths)
         emit triHandler.progressValueChanged(curSize);
         if (isText) {
             for (auto t : tris) {
-                trigrams[t.first].push_back(t.second);
+                trigrams[t.first].insert(t.second);
             }
         }
         tris.clear();
