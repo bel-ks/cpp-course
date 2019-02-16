@@ -51,6 +51,7 @@ private:
     qint32 strSize;
     bool isCanceled;
     bool hasAllTris;
+    QString curPath;
     qint32 filesSize;
     QVector<QString> allFiles;
     QVector<QString> filesWith1;

@@ -75,6 +75,7 @@ void MainWindow::on_index_button_clicked()
     filesWith2.clear();
     isCanceled = false;
     containsStr.clear();
+    curPath = ui->dirPath->text();
     ui->dirPath->setEnabled(false);
     ui->index_button->setEnabled(false);
     ui->search_button->setEnabled(false);
@@ -150,7 +151,7 @@ void MainWindow::files_were_found()
         ++to;
         to %= size;
     }
-    while (!blocks.back().size()) {
+    while (blocks.size() != 1 && !blocks.back().size()) {
         blocks.pop_back();
     }
     QProgressDialog progress("Getting trigrams..", "Cancel", 0, filesSize);
@@ -215,11 +216,77 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
         file.close();
         abil.lock();
         curSize += (size >> 15);
-        emit triHandler.progressValueChanged(curSize);
+        emit strHandler.progressValueChanged(curSize);
         abil.unlock();
     }
     if (isCanceled) {
         return;
+    }
+    if (strSize == 2) {
+        for (auto filePath : filesWith2) {
+            if (isCanceled) {
+                return;
+            }
+            QFile file(filePath);
+            abil.lock();
+            curSize += (2 >> 15);
+            emit strHandler.progressValueChanged(curSize);
+            abil.unlock();
+            if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                continue;
+            }
+            QTextStream input(&file);
+            QChar first, second;
+            input >> first;
+            input >> second;
+            if (str[0] == first && str[1] == second) {
+                files.push_back(filePath);
+            }
+            file.close();
+        }
+    }
+    if (strSize == 1) {
+        for (auto filePath : filesWith1) {
+            if (isCanceled) {
+                return;
+            }
+            QFile file(filePath);
+            abil.lock();
+            curSize += (1 >> 15);
+            emit strHandler.progressValueChanged(curSize);
+            abil.unlock();
+            if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                continue;
+            }
+            QTextStream input(&file);
+            QChar cur;
+            input >> cur;
+            if (str == cur) {
+                files.push_back(filePath);
+            }
+            file.close();
+        }
+        for (auto filePath : filesWith2) {
+            if (isCanceled) {
+                return;
+            }
+            QFile file(filePath);
+            abil.lock();
+            curSize += (2 >> 15);
+            emit strHandler.progressValueChanged(curSize);
+            abil.unlock();
+            if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                continue;
+            }
+            QTextStream input(&file);
+            QChar first, second;
+            input >> first;
+            input >> second;
+            if (str == first || str == second) {
+                files.push_back(filePath);
+            }
+            file.close();
+        }
     }
     abil.lock();
     for (auto f : files) {
@@ -296,7 +363,7 @@ void MainWindow::on_search_button_clicked()
         to %= size;
         filesSize += (QFile(allFiles[f]).size() >> 15);
     }
-    while (!blocks.back().size()) {
+    while (blocks.size() != 1 && !blocks.back().size()) {
         blocks.pop_back();
     }
     QProgressDialog progress("Finding string..", "Cancel", 0, filesSize);
@@ -313,7 +380,7 @@ void MainWindow::on_search_button_clicked()
         qint64 row = 0;
         for (auto f : containsStr) {
             ui->files_with_str->setRowCount(row + 1);
-            f.remove(0, ui->dirPath->text().length());
+            f.remove(0, curPath.length());
             ui->files_with_str->setItem(row, 0, new QTableWidgetItem(f));
             ui->files_with_str->item(row, 0)->setFlags(ui->files_with_str->item(row, 0)->flags() & ~Qt::ItemIsEditable);
             ++row;
