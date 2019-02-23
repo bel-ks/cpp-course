@@ -6,6 +6,7 @@
 #include <QFileSystemWatcher>
 #include <QProgressDialog>
 #include <QFutureWatcher>
+#include <QMutexLocker>
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QStringList>
@@ -41,6 +42,8 @@ private slots:
     void files_were_found();
 
     void cancel_button_clicked();
+
+    void changed_file_or_dir();
 
 private:
     Ui::MainWindow *ui;

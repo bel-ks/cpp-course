@@ -8,14 +8,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     hasAllTris = false;
     ui->search_button->setEnabled(false);
+    watcher = new QFileSystemWatcher(this);
     connect(&fileHandler, SIGNAL(finished()), this, SLOT(files_were_found()));
     ui->files_with_str->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    connect(watcher, SIGNAL(fileChanged(QString)), this, SLOT(on_index_button_clicked()));
-    connect(watcher, SIGNAL(directoryChanged(QString)), this, SLOT(on_index_button_clicked()));
+    connect(watcher, SIGNAL(fileChanged(QString)), this, SLOT(changed_file_or_dir()));
+    connect(watcher, SIGNAL(directoryChanged(QString)), this, SLOT(changed_file_or_dir()));
 }
 
 MainWindow::~MainWindow()
 {
+    delete watcher;
     delete ui;
 }
 
@@ -99,10 +101,9 @@ void MainWindow::get_trigrams(QVector<QPair<QString, qint64> > paths)
         QFile file(filePath.first);
         qint64 size = file.size();
         if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            abil.lock();
+            QMutexLocker lock(&abil);
             curSize += (size >> 15);
             emit triHandler.progressValueChanged(curSize);
-            abil.unlock();
             continue;
         }
         QTextStream input(&file);
@@ -128,7 +129,7 @@ void MainWindow::get_trigrams(QVector<QPair<QString, qint64> > paths)
             ++ind;
         }
         file.close();
-        abil.lock();
+        QMutexLocker lock(&abil);
         curSize += (size >> 15);
         emit triHandler.progressValueChanged(curSize);
         if (isText) {
@@ -137,7 +138,6 @@ void MainWindow::get_trigrams(QVector<QPair<QString, qint64> > paths)
             }
         }
         tris.clear();
-        abil.unlock();
     }
     if (isCanceled) {
         return;
@@ -190,10 +190,9 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
         QFile file(filePath.first);
         qint64 size = file.size();
         if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            abil.lock();
+            QMutexLocker lock(&abil);
             curSize += (size >> 15);
             emit strHandler.progressValueChanged(curSize);
-            abil.unlock();
             continue;
         }
         QTextStream input(&file);
@@ -218,10 +217,9 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
             ++ind;
         }
         file.close();
-        abil.lock();
+        QMutexLocker lock(&abil);
         curSize += (size >> 15);
         emit strHandler.progressValueChanged(curSize);
-        abil.unlock();
     }
     if (isCanceled) {
         return;
@@ -232,10 +230,11 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
                 return;
             }
             QFile file(filePath);
-            abil.lock();
-            curSize += (2 >> 15);
-            emit strHandler.progressValueChanged(curSize);
-            abil.unlock();
+            {
+                QMutexLocker lock(&abil);
+                curSize += (2 >> 15);
+                emit strHandler.progressValueChanged(curSize);
+            }
             if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 continue;
             }
@@ -255,10 +254,11 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
                 return;
             }
             QFile file(filePath);
-            abil.lock();
-            curSize += (1 >> 15);
-            emit strHandler.progressValueChanged(curSize);
-            abil.unlock();
+            {
+                QMutexLocker lock(&abil);
+                curSize += (1 >> 15);
+                emit strHandler.progressValueChanged(curSize);
+            }
             if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 continue;
             }
@@ -275,10 +275,11 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
                 return;
             }
             QFile file(filePath);
-            abil.lock();
-            curSize += (2 >> 15);
-            emit strHandler.progressValueChanged(curSize);
-            abil.unlock();
+            {
+                QMutexLocker lock(&abil);
+                curSize += (2 >> 15);
+                emit strHandler.progressValueChanged(curSize);
+            }
             if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 continue;
             }
@@ -292,11 +293,10 @@ void MainWindow::get_files(QVector<QPair<QString, qint64> > paths)
             file.close();
         }
     }
-    abil.lock();
+    QMutexLocker lock(&abil);
     for (auto f : files) {
         containsStr.push_back(f);
     }
-    abil.unlock();
 }
 
 void MainWindow::on_search_button_clicked()
@@ -402,4 +402,14 @@ void MainWindow::cancel_button_clicked()
 {
     isCanceled = true;
     ui->statusBar->showMessage("Canceled");
+}
+
+void MainWindow::changed_file_or_dir()
+{
+    isCanceled = true;
+    fileHandler.waitForFinished();
+    triHandler.waitForFinished();
+    strHandler.waitForFinished();
+    isCanceled = false;
+    on_index_button_clicked();
 }
